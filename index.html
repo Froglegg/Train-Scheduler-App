@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+    <script src="moment-timezone-with-data.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="jumbotron">
+        <h1>Train Scheduler</h1>
+    </div>
+    <div class="container">
+
+        <h3>Current Train Schedule</h2>
+
+            <table class="table">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">Train Name</th>
+                        <th scope="col">Destination</th>
+                        <th scope="col">Frequency (minutes)</th>
+                        <th scope="col">Next Arrival</th>
+                        <th scope="col">Minutes Away</th>
+                    </tr>
+                </thead>
+                <tbody id="table">
+                    <tr>
+                        <td></td>
+
+                    </tr>
+                </tbody>
+            </table>
+
+            <form>
+                <h3 class="">Add Train</h3>
+
+                <div class="form-group">
+                    <label>Train Name</label>
+                    <input class="form-control" id="nameForm" placeholder="Enter train name">
+                </div>
+                <div class="form-group">
+                    <label>Destination</label>
+                    <input class="form-control" id="destinationForm" placeholder="Enter tain destination">
+                </div>
+                <div class="form-group">
+                    <label>First Train Time (HH:mm Military Time)</label>
+                    <input class="form-control" id="firstTimeForm" placeholder="Enter first train time">
+                </div>
+                <div class="form-group">
+                    <label>Frequency (mm two-digit minutes)</label>
+                    <input class="form-control" id="frequencyForm" placeholder="Train departs every X minutes">
+                </div>
+                <button type="submit" class="btn btn-primary" id="submit">Submit</button>
+            </form>
+
+    </div>
+
+
+    <script type="text/javascript">
+        const timeZone = moment.tz.guess();
+        console.log(timeZone);
+        // Your web app's Firebase configuration
+        var config = {
+            apiKey: "AIzaSyDkXHjll24maztcRW_DSA6qUwJ-r47LV7E",
+            authDomain: "train-scheduler-9714d.firebaseapp.com",
+            databaseURL: "https://train-scheduler-9714d.firebaseio.com",
+            projectId: "train-scheduler-9714d",
+            storageBucket: "",
+            messagingSenderId: "342592922355",
+            appId: "1:342592922355:web:6b4662506d4f2d4a"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(config);
+
+        var database = firebase.database();
+
+        var name;
+        var destination;
+        var firstTime;
+        var frequency;
+        var nextArrival;
+        var minutesAway;
+        var frequencyTime;
+        var currentTime;
+        var convertedArrivalTime;
+        $("#submit").on("click", function(event) {
+            event.preventDefault();
+
+            name = $("#nameForm").val().trim();
+
+            destination = $("#destinationForm").val().trim();
+
+            firstTime = $("#firstTimeForm").val().trim();
+
+            firstTime = moment(firstTime, "HH:mm").toDate();
+            console.log(firstTime);
+            firstTime = moment(firstTime).format("x");
+            firstTime = parseInt(firstTime);
+            frequency = $("#frequencyForm").val().trim();
+
+            frequency = moment(frequency, "mm").toDate();
+
+            frequency = moment(frequency).format("x");
+
+            frequency = parseInt(frequency);
+
+            currentTime = moment().local();
+
+            console.log(currentTime);
+
+            currentTime = moment(currentTime).format("x");
+
+            nextArrival = firstTime + frequency;
+
+            nextArrival = moment(nextArrival, "x").toDate();
+
+            nextArrival = moment(nextArrival).format("HH:mm");
+
+            minutesAway = (firstTime + frequency) - currentTime;
+
+            minutesAway = moment(minutesAway, "x").toDate();
+
+            minutesAway = moment(minutesAway).format("mm");
+
+            database.ref().push({
+                name: name,
+                destination: destination,
+                firstTime: firstTime,
+                frequency: frequency,
+                nextArrival: nextArrival,
+                minutesAway: minutesAway,
+                dateAdded: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            // setInterval(function() {
+
+            //     currentTime = moment().local();
+
+            //     currentTime = moment(currentTime).format("x");
+
+            //     nextArrival = firstTime + frequency;
+
+            //     nextArrival = moment(nextArrival, "x").toDate();
+
+            //     nextArrival = moment(nextArrival).format("HH:mm");
+
+            //     minutesAway = (firstTime + frequency) - currentTime;
+
+            //     minutesAway = moment(minutesAway, "x").toDate();
+
+            //     minutesAway = moment(minutesAway).format("mm");
+
+            //     database.ref().push({
+            //         name: name,
+            //         destination: destination,
+            //         firstTime: firstTime,
+            //         frequency: frequency,
+            //         nextArrival: nextArrival,
+            //         minutesAway: minutesAway,
+            //         dateAdded: firebase.database.ServerValue.TIMESTAMP
+            //     });
+            // }, 3000);
+
+        });
+
+        database.ref().on("child_added", function(snapshot) {
+
+            // This "snapshot" allows the page to get the most current values in firebase.
+            frequencyTime = snapshot.val().frequency;
+            frequencyTime = moment(frequencyTime).toDate();
+            frequencyTime = moment(frequencyTime).format("mm");
+
+
+            convertedArrivalTime = snapshot.val().nextArrival;
+            console.log(convertedArrivalTime);
+            convertedArrivalTime = moment(convertedArrivalTime, "HH:mm").toDate();
+            console.log(convertedArrivalTime);
+            var a = moment.tz(convertedArrivalTime, timeZone);
+            console.log(a);
+            a = moment(a, "x").toDate();
+            a = moment(a).format("HH:mm");
+
+
+            $("#table").append("<tr><td>" + snapshot.val().name + "</td><td>" + snapshot.val().destination + "</td><td>" + frequencyTime + "</td><td>" + a + "</td><td>" + snapshot.val().minutesAway + "</td></tr>");
+
+            // If any errors are experienced, log them to console.
+        }, function(errorObject) {
+            console.log("The read failed: " + errorObject.code);
+        });
+
+
+        // console.log(childSnapshot.val().joinDate);
+        // dataRef.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function(snapshot) {
+        //       // Change the HTML to reflect
+        //       $("#name-display").text(snapshot.val().name);
+        //       $("#email-display").text(snapshot.val().email);
+        //       $("#age-display").text(snapshot.val().age);
+        //       $("#comment-display").text(snapshot.val().comment);
+        //     });
+    </script>
+</body>
+
+</html>
