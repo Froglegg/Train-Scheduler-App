@@ -67,6 +67,7 @@
     <script type="text/javascript">
         const timeZone = moment.tz.guess();
         console.log(timeZone);
+
         // Your web app's Firebase configuration
         var config = {
             apiKey: "AIzaSyDkXHjll24maztcRW_DSA6qUwJ-r47LV7E",
@@ -77,6 +78,7 @@
             messagingSenderId: "342592922355",
             appId: "1:342592922355:web:6b4662506d4f2d4a"
         };
+
         // Initialize Firebase
         firebase.initializeApp(config);
 
@@ -91,7 +93,9 @@
         var frequencyTime;
         var currentTime;
         var convertedArrivalTime;
+
         $("#submit").on("click", function(event) {
+
             event.preventDefault();
 
             name = $("#nameForm").val().trim();
@@ -101,9 +105,11 @@
             firstTime = $("#firstTimeForm").val().trim();
 
             firstTime = moment(firstTime, "HH:mm").toDate();
-            console.log(firstTime);
+
             firstTime = moment(firstTime).format("x");
+
             firstTime = parseInt(firstTime);
+
             frequency = $("#frequencyForm").val().trim();
 
             frequency = moment(frequency, "mm").toDate();
@@ -113,8 +119,6 @@
             frequency = parseInt(frequency);
 
             currentTime = moment().local();
-
-            console.log(currentTime);
 
             currentTime = moment(currentTime).format("x");
 
@@ -175,17 +179,26 @@
 
             // This "snapshot" allows the page to get the most current values in firebase.
             frequencyTime = snapshot.val().frequency;
+
             frequencyTime = moment(frequencyTime).toDate();
+
             frequencyTime = moment(frequencyTime).format("mm");
 
-
             convertedArrivalTime = snapshot.val().nextArrival;
+
             console.log(convertedArrivalTime);
+
             convertedArrivalTime = moment(convertedArrivalTime, "HH:mm").toDate();
+
+
             console.log(convertedArrivalTime);
+
             var a = moment.tz(convertedArrivalTime, timeZone);
+
             console.log(a);
+
             a = moment(a, "x").toDate();
+
             a = moment(a).format("HH:mm");
 
 
