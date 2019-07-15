@@ -11,11 +11,13 @@
     <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
     <script src="moment-timezone-with-data.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta http-equiv="refresh" content="60" >
 </head>
 
 <body>
     <div class="jumbotron">
         <h1>Train Scheduler</h1>
+        <h2>Current Time: <span id="current-time"></span></h2>
     </div>
     <div class="container">
 
@@ -65,10 +67,16 @@
 
 
     <script type="text/javascript">
-        const timeZone = moment.tz.guess();
-        console.log(timeZone);
+    setInterval(function(){
+    var currentTime = moment().format("hh:mm A");
+    $("#current-time").html(currentTime);
+    }, 1000
+    );
 
-        // Your web app's Firebase configuration
+    const timeZone = moment.tz.guess();
+    console.log(timeZone);
+
+        // Firebase configuration
         var config = {
             apiKey: "AIzaSyDkXHjll24maztcRW_DSA6qUwJ-r47LV7E",
             authDomain: "train-scheduler-9714d.firebaseapp.com",
@@ -84,140 +92,59 @@
 
         var database = firebase.database();
 
+        // declare initial variables
         var name;
         var destination;
         var firstTime;
         var frequency;
-        var nextArrival;
-        var minutesAway;
-        var frequencyTime;
-        var currentTime;
-        var convertedArrivalTime;
 
         $("#submit").on("click", function(event) {
 
             event.preventDefault();
 
+            var firebase
             name = $("#nameForm").val().trim();
-
             destination = $("#destinationForm").val().trim();
-
-            firstTime = $("#firstTimeForm").val().trim();
-
-            firstTime = moment(firstTime, "HH:mm").toDate();
-
-            firstTime = moment(firstTime).format("x");
-
-            firstTime = parseInt(firstTime);
-
+            // first time input converted to date, parsed as HH:mm, subtract 10 years to make sure that first train comes before, converted to UNIX format
+            firstTime = moment($("#firstTimeForm").val().trim(), "HH:mm").subtract(10, "years").format("X");
             frequency = $("#frequencyForm").val().trim();
 
-            frequency = moment(frequency, "mm").toDate();
-
-            frequency = moment(frequency).format("x");
-
-            frequency = parseInt(frequency);
-
-            currentTime = moment().local();
-
-            currentTime = moment(currentTime).format("x");
-
-            nextArrival = firstTime + frequency;
-
-            nextArrival = moment(nextArrival, "x").toDate();
-
-            nextArrival = moment(nextArrival).format("HH:mm");
-
-            minutesAway = (firstTime + frequency) - currentTime;
-
-            minutesAway = moment(minutesAway, "x").toDate();
-
-            minutesAway = moment(minutesAway).format("mm");
-
-            database.ref().push({
+            var newTrainObject = {
                 name: name,
                 destination: destination,
                 firstTime: firstTime,
                 frequency: frequency,
-                nextArrival: nextArrival,
-                minutesAway: minutesAway,
-                dateAdded: firebase.database.ServerValue.TIMESTAMP
-            });
+            }
 
-            // setInterval(function() {
-
-            //     currentTime = moment().local();
-
-            //     currentTime = moment(currentTime).format("x");
-
-            //     nextArrival = firstTime + frequency;
-
-            //     nextArrival = moment(nextArrival, "x").toDate();
-
-            //     nextArrival = moment(nextArrival).format("HH:mm");
-
-            //     minutesAway = (firstTime + frequency) - currentTime;
-
-            //     minutesAway = moment(minutesAway, "x").toDate();
-
-            //     minutesAway = moment(minutesAway).format("mm");
-
-            //     database.ref().push({
-            //         name: name,
-            //         destination: destination,
-            //         firstTime: firstTime,
-            //         frequency: frequency,
-            //         nextArrival: nextArrival,
-            //         minutesAway: minutesAway,
-            //         dateAdded: firebase.database.ServerValue.TIMESTAMP
-            //     });
-            // }, 3000);
+            database.ref().push(newTrainObject);
 
         });
 
         database.ref().on("child_added", function(snapshot) {
 
-            // This "snapshot" allows the page to get the most current values in firebase.
-            frequencyTime = snapshot.val().frequency;
+            let data = snapshot.val();
+            let trainNames = data.name;
+            let trainDestination = data.destination;
+            let trainFrequency = data.frequency;
+            let firstTrain = data.firstTime;
+            // the tRemainder takes the difference between the current time and the first train time, and then calculates the remainder between the two using % modulo
+            let tRemainder = moment().diff(moment.unix(firstTrain), "minutes") % trainFrequency;
+            let tMinutes = trainFrequency - tRemainder;
 
-            frequencyTime = moment(frequencyTime).toDate();
+            // To calculate the arrival time, add the tMinutes to the currrent time
+            let tArrival = moment().add(tMinutes, "m").format("hh:mm A");
 
-            frequencyTime = moment(frequencyTime).format("mm");
-
-            convertedArrivalTime = snapshot.val().nextArrival;
-
-            console.log(convertedArrivalTime);
-
-            convertedArrivalTime = moment(convertedArrivalTime, "HH:mm").toDate();
-
-
-            console.log(convertedArrivalTime);
-
-            var a = moment.tz(convertedArrivalTime, timeZone);
-
-            console.log(a);
-
-            a = moment(a, "x").toDate();
-
-            a = moment(a).format("HH:mm");
-
-
-            $("#table").append("<tr><td>" + snapshot.val().name + "</td><td>" + snapshot.val().destination + "</td><td>" + frequencyTime + "</td><td>" + a + "</td><td>" + snapshot.val().minutesAway + "</td></tr>");
-
-            // If any errors are experienced, log them to console.
+            $("#table").append("<tr><td>" + trainNames + "</td><td>" + trainDestination + "</td><td>" + trainFrequency + "</td><td>" + tArrival + "</td><td>" + tMinutes + "</td></tr>");
         }, function(errorObject) {
-            console.log("The read failed: " + errorObject.code);
-        });
+            console.log("The read failed: " + errorObject.code);});
 
+            setInterval(function(){
+    var currentTime = moment().format("hh:mm A");
+    $("#current-time").html(currentTime);
+    }, 1000
+    );
+  
 
-        // console.log(childSnapshot.val().joinDate);
-        // dataRef.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function(snapshot) {
-        //       // Change the HTML to reflect
-        //       $("#name-display").text(snapshot.val().name);
-        //       $("#email-display").text(snapshot.val().email);
-        //       $("#age-display").text(snapshot.val().age);
-        //       $("#comment-display").text(snapshot.val().comment);
-        //     });
     </script>
 </body>
 
