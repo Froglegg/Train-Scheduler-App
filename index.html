@@ -5,13 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Train Scheduler</title>
     <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
-    <script src="moment-timezone-with-data.js"></script>
+    <script src="assets/scripts/moment-timezone-with-data.js"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <meta http-equiv="refresh" content="60" >
+
+    <!-- this will refresh the page every minute-->
+    <!-- <meta http-equiv="refresh" content="60"> -->
 </head>
 
 <body>
@@ -20,132 +22,49 @@
         <h2>Current Time: <span id="current-time"></span></h2>
     </div>
     <div class="container">
+        <table class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">Train Name</th>
+                    <th scope="col">Destination</th>
+                    <th scope="col">Frequency (minutes)</th>
+                    <th scope="col">Next Arrival</th>
+                    <th scope="col">Minutes Away</th>
+                </tr>
+            </thead>
+            <tbody id="table">
+                <tr>
+                    <td></td>
 
-        <h3>Current Train Schedule</h2>
+                </tr>
+            </tbody>
+        </table>
 
-            <table class="table">
-                <thead class="thead-dark">
-                    <tr>
-                        <th scope="col">Train Name</th>
-                        <th scope="col">Destination</th>
-                        <th scope="col">Frequency (minutes)</th>
-                        <th scope="col">Next Arrival</th>
-                        <th scope="col">Minutes Away</th>
-                    </tr>
-                </thead>
-                <tbody id="table">
-                    <tr>
-                        <td></td>
+        <form>
+            <h3 class="">Add Train</h3>
 
-                    </tr>
-                </tbody>
-            </table>
-
-            <form>
-                <h3 class="">Add Train</h3>
-
-                <div class="form-group">
-                    <label>Train Name</label>
-                    <input class="form-control" id="nameForm" placeholder="Enter train name">
-                </div>
-                <div class="form-group">
-                    <label>Destination</label>
-                    <input class="form-control" id="destinationForm" placeholder="Enter tain destination">
-                </div>
-                <div class="form-group">
-                    <label>First Train Time (HH:mm Military Time)</label>
-                    <input class="form-control" id="firstTimeForm" placeholder="Enter first train time">
-                </div>
-                <div class="form-group">
-                    <label>Frequency (mm two-digit minutes)</label>
-                    <input class="form-control" id="frequencyForm" placeholder="Train departs every X minutes">
-                </div>
-                <button type="submit" class="btn btn-primary" id="submit">Submit</button>
-            </form>
+            <div class="form-group">
+                <label>Train Name</label>
+                <input class="form-control" id="nameForm" placeholder="Enter train name">
+            </div>
+            <div class="form-group">
+                <label>Destination</label>
+                <input class="form-control" id="destinationForm" placeholder="Enter tain destination">
+            </div>
+            <div class="form-group">
+                <label>First Train Time (HH:mm Military Time)</label>
+                <input class="form-control" id="firstTimeForm" placeholder="Enter first train time">
+            </div>
+            <div class="form-group">
+                <label>Frequency (mm two-digit minutes)</label>
+                <input class="form-control" id="frequencyForm" placeholder="Train departs every X minutes">
+            </div>
+            <button type="submit" class="btn btn-primary" id="submit">Submit</button>
+        </form>
 
     </div>
+    <script src="assets/scripts/app.js"></script>
 
-
-    <script type="text/javascript">
-    setInterval(function(){
-    var currentTime = moment().format("hh:mm A");
-    $("#current-time").html(currentTime);
-    }, 1000
-    );
-
-    const timeZone = moment.tz.guess();
-    console.log(timeZone);
-
-        // Firebase configuration
-        var config = {
-            apiKey: "AIzaSyDkXHjll24maztcRW_DSA6qUwJ-r47LV7E",
-            authDomain: "train-scheduler-9714d.firebaseapp.com",
-            databaseURL: "https://train-scheduler-9714d.firebaseio.com",
-            projectId: "train-scheduler-9714d",
-            storageBucket: "",
-            messagingSenderId: "342592922355",
-            appId: "1:342592922355:web:6b4662506d4f2d4a"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(config);
-
-        var database = firebase.database();
-
-        // declare initial variables
-        var name;
-        var destination;
-        var firstTime;
-        var frequency;
-
-        $("#submit").on("click", function(event) {
-
-            event.preventDefault();
-
-            var firebase
-            name = $("#nameForm").val().trim();
-            destination = $("#destinationForm").val().trim();
-            // first time input converted to date, parsed as HH:mm, subtract 10 years to make sure that first train comes before, converted to UNIX format
-            firstTime = moment($("#firstTimeForm").val().trim(), "HH:mm").subtract(10, "years").format("X");
-            frequency = $("#frequencyForm").val().trim();
-
-            var newTrainObject = {
-                name: name,
-                destination: destination,
-                firstTime: firstTime,
-                frequency: frequency,
-            }
-
-            database.ref().push(newTrainObject);
-
-        });
-
-        database.ref().on("child_added", function(snapshot) {
-
-            let data = snapshot.val();
-            let trainNames = data.name;
-            let trainDestination = data.destination;
-            let trainFrequency = data.frequency;
-            let firstTrain = data.firstTime;
-            // the tRemainder takes the difference between the current time and the first train time, and then calculates the remainder between the two using % modulo
-            let tRemainder = moment().diff(moment.unix(firstTrain), "minutes") % trainFrequency;
-            let tMinutes = trainFrequency - tRemainder;
-
-            // To calculate the arrival time, add the tMinutes to the currrent time
-            let tArrival = moment().add(tMinutes, "m").format("hh:mm A");
-
-            $("#table").append("<tr><td>" + trainNames + "</td><td>" + trainDestination + "</td><td>" + trainFrequency + "</td><td>" + tArrival + "</td><td>" + tMinutes + "</td></tr>");
-        }, function(errorObject) {
-            console.log("The read failed: " + errorObject.code);});
-
-            setInterval(function(){
-    var currentTime = moment().format("hh:mm A");
-    $("#current-time").html(currentTime);
-    }, 1000
-    );
-  
-
-    </script>
 </body>
 
 </html>

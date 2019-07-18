@@ -1,8 +1,0 @@
-We want to konw when the next train arrives. 
-
-We have our current time... 
-
-We have our First Train time 
-we have our frequency of departure times set in minutes 
-What we need to do is take our first train time, add the frequency of departure in minutes to it, to get the next train arrival 
-FOr number of minutes away, we subtract current time from the next arrival time. 
